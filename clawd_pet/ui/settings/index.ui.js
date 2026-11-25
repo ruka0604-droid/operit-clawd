@@ -1,7 +1,7 @@
 "use strict";
 // Clawd 设置页（侧边栏）
 // 通过 ctx.callTool('clawd:clawd_xxx') 调子包工具；串行调用 + 超时，参考 DS 桌宠控制台的经验
-var SUB = "plush_heng", PKG = "plush_heng", TIMEOUT = 8000;
+var SUB = "plush_heng_control", PKG = "plush_heng", TIMEOUT = 8000;
 
 var C = {
   bg: "#FBF6F2", card: "#FFFFFF", accentSoft: "#F7E3D9",
