@@ -1,6 +1,6 @@
 /* METADATA
 {
-  "name": "plush_heng",
+  "name": "plush_heng_control",
   "description": {
     "zh": "Clawd 桌宠：让桌面上的 Clawd 冒气泡说话、播放动作、贴边/出来，以及查看与修改设置。用户在桌宠上双击即可输入，消息会发到绑定的对话里，回复会以分段气泡显示。",
     "en": "Clawd desk pet: make Clawd speak in bubbles, play animations, dock to edges, and manage settings."
