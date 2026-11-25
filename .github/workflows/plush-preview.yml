@@ -1,0 +1,19 @@
+name: Build Plush Heng preview
+on:
+  push:
+    branches: [plush-heng-dev]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and verify ToolPkg
+        run: python3 tools/build_plush_preview.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plush-heng-v0.1.0
+          path: dist/plush_heng_v0.1.0.toolpkg
+          if-no-files-found: error
