@@ -29,7 +29,7 @@ function Screen(ctx) {
   var subColor = cs.onSurfaceVariant || C.sub;
 
   function replay() {
-    var name = text ? "plush_heng:clawd_say" : "plush_heng:clawd_play";
+    var name = text ? "plush_heng_control:clawd_say" : "plush_heng_control:clawd_play";
     var params = text ? { text: text, anim: anim || undefined } : { name: anim || "happy" };
     setSent(1);
     try {
