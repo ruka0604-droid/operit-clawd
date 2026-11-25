@@ -57,12 +57,31 @@ cx.imageSmoothingEnabled = false;
 if (CFG.leanDeg != null) cv.style.setProperty('--lean', (+CFG.leanDeg || 0) + 'deg');
 if (CFG.leanShift != null) cv.style.setProperty('--shift', (+CFG.leanShift || 0) + '%');
 function wobble() { cv.classList.remove('wob'); void cv.offsetWidth; cv.classList.add('wob'); }
-var sp = { v: null, img: null, f: 0, n: 1, t: null }, sprCache = {};
-function sprImg(src) { if (!sprCache[src]) { var i = new Image(); i.src = src; sprCache[src] = i; } return sprCache[src]; }
+var sp = { v: null, img: null, f: 0, n: 1, t: null, deadline: 0 }, sprCache = Object.create(null), sprOrder = [];
+var SPR_CACHE_LIMIT = 8, SPR_LOAD_TIMEOUT = 5000, SPR_MAX_FRAME = 512, SPR_MAX_PIXELS = 4194304;
+function sprImg(src) {
+  var im = sprCache[src], at = sprOrder.indexOf(src);
+  if (at >= 0) sprOrder.splice(at, 1);
+  if (!im) { im = new Image(); im.src = src; sprCache[src] = im; }
+  sprOrder.push(src);
+  while (sprOrder.length > SPR_CACHE_LIMIT) delete sprCache[sprOrder.shift()];
+  return im;
+}
+function sprFail() {
+  clearTimeout(sp.t); sp.t = null;
+  var src = sp.v && sp.v.src;
+  if (src) {
+    delete sprCache[src];
+    var at = sprOrder.indexOf(src);
+    if (at >= 0) sprOrder.splice(at, 1);
+  }
+  sp.img = null;
+  // Keep the previous valid frame visible; a later state change can recover.
+}
 function sprDraw() {
   var im = sp.img; if (!im || !im.complete || !im.naturalWidth) return false;
   var size = im.naturalHeight;
-  if (!size || im.naturalWidth % size !== 0) return false;
+  if (!size || size > SPR_MAX_FRAME || im.naturalWidth % size !== 0 || im.naturalWidth * size > SPR_MAX_PIXELS) return false;
   sp.n = im.naturalWidth / size;
   if (cv.width !== size || cv.height !== size) { cv.width = size; cv.height = size; }
   cx.imageSmoothingEnabled = size > 32;
@@ -72,7 +91,13 @@ function sprDraw() {
   return true;
 }
 function sprStep() {
-  if (!sprDraw()) { sp.t = setTimeout(sprStep, 60); return; }
+  if (!sp.img) return;
+  if (!sp.img.complete) {
+    if (Date.now() >= sp.deadline) { sprFail(); return; }
+    sp.t = setTimeout(sprStep, 60); return;
+  }
+  try { if (!sprDraw()) { sprFail(); return; } }
+  catch (e) { sprFail(); return; }
   var v = sp.v, h = (v.hold && v.hold[sp.f]) || 1;
   sp.t = setTimeout(function () {
     if (sp.f + 1 < sp.n) sp.f++;
@@ -81,11 +106,11 @@ function sprStep() {
     sprStep();
   }, 1000 / (v.fps || 4) * h);
 }
-function sprStop() { clearTimeout(sp.t); cv.classList.remove('on'); }
+function sprStop() { clearTimeout(sp.t); sp.t = null; sp.img = null; cv.classList.remove('on'); }
 function sprPlay(name) {
   var vs = SPR[name], v = vs[Math.floor(Math.random() * vs.length)];
   clearTimeout(sp.t);
-  sp.v = v; sp.f = 0; sp.img = sprImg(v.src);
+  sp.v = v; sp.f = 0; sp.deadline = Date.now() + SPR_LOAD_TIMEOUT; sp.img = sprImg(v.src);
   cv.classList.add('on');
   sprStep();
 }
