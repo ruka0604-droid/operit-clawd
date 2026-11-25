@@ -1,6 +1,6 @@
 "use strict";
 // 毛绒阿衡小档案（侧边栏）：整页 WebView 显示像素风档案
-var SUB = "plush_heng", PKG = "plush_heng", TIMEOUT = 8000;
+var SUB = "plush_heng_control", PKG = "plush_heng", TIMEOUT = 8000;
 function candidates(name) { return [SUB + ":" + name, PKG + ":" + SUB + ":" + name, PKG + ":" + name]; }
 function withTimeout(p, ms, label) {
   return new Promise(function (res, rej) {
