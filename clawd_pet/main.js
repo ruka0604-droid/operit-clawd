@@ -86,8 +86,8 @@ const DEFAULTS = {
   },
   bubble: {
     widthDp: 240, maxHeightDp: 320,
-    anchorTop: 0.54,           // 气泡贴到 Clawd 头顶：头顶在画布里的高度比例（越大越往下贴）
-    anchorBottom: 0.88,        // 放到下方时：脚底在画布里的高度比例
+    anchorTop: 0.12,           // 气泡贴到 Clawd 头顶：头顶在画布里的高度比例（越大越往下贴）
+    anchorBottom: 0.90,        // 放到下方时：脚底在画布里的高度比例
     maxVisible: 2,             // 同时最多显示几条
     gapMs: 1200,               // 下一条冒出前的基础间隔
     typeCharMs: 130,           // 按当前这条字数追加的阅读时间（每字）
@@ -162,7 +162,7 @@ async function readText(p) {
   } catch (e) { return ''; }
 }
 async function writeText(p, s) {
-  try { await Tools.Files.write(p, s, false); return true; } catch (e) { return false; }
+  try { const r = await Tools.Files.write(p, s, false); return !(r && r.success === false); } catch (e) { return false; }
 }
 async function ensureDir(p) { try { await Tools.Files.mkdir(p, true); } catch (e) { } }
 
@@ -195,7 +195,8 @@ let spriteInfo = '';
 async function copyOver(src, dst) {
   try { const r = await Tools.Files.copy(src, dst); if (!(r && r.success === false)) return; } catch (e) { }
   try { await Tools.Files.deleteFile(dst); } catch (e) { }
-  await Tools.Files.copy(src, dst);
+  const r = await Tools.Files.copy(src, dst);
+  if (r && r.success === false) throw new Error('copy failed: ' + dst);
 }
 async function ensureSprites(force) {
   const dir = CFG_DIR + '/sprites';
@@ -210,13 +211,13 @@ async function ensureSprites(force) {
     const ship = JSON.parse(await readText(await ToolPkg.readResource('spr_json', 'sprites.json', true))) || {};
     let cur = {}; try { cur = JSON.parse(await readText(dir + '/sprites.json')) || {}; } catch (e) { cur = {}; }
     for (const k in ship) cur[k] = ship[k];
-    await writeText(dir + '/sprites.json', JSON.stringify(cur, null, 1));
+    if (!await writeText(dir + '/sprites.json', JSON.stringify(cur, null, 1))) throw new Error('sprite config write failed');
   } catch (e) { fail.push('sprites.json'); }
-  if (!fail.length) await writeText(dir + '/.pkgver', SPRITE_VER);
+  if (!fail.length && !await writeText(dir + '/.pkgver', SPRITE_VER)) fail.push('.pkgver');
   spriteInfo = 'copied ' + n + '/' + SHIP_SPRITES.length + (fail.length ? ' fail: ' + fail.join(',') : '');
 }
 async function saveSettings() {
-  await writeText(SETTINGS_PATH, JSON.stringify(settings, null, 2));
+  if (!await writeText(SETTINGS_PATH, JSON.stringify(settings, null, 2))) throw new Error('settings write failed');
 }
 
 // ==================== 宿主 ====================
@@ -547,7 +548,7 @@ function linkScope(chatId) {
   return !!bound && chatId === bound;
 }
 // ==================== 输入菜单开关：标签提示词 ====================
-const PROMPT_ENV = 'CLAWD_TAG_PROMPT';
+const PROMPT_ENV = 'PLUSH_HENG_TAG_PROMPT';
 const PROMPT_TOGGLE_ID = 'clawd_tag_prompt';
 // 读开关：优先已加载的 settings.json，没加载时读环境变量镜像（提示词钩子可能跑在未初始化的上下文里）
 function promptEnabled() {
@@ -595,7 +596,7 @@ async function onInputMenuToggle(event) {
 // 标签用法说明正文（两种注入方式共用）
 const GUIDE_ID = 'clawd_tag_guide';
 function tagGuideText() {
-  return '【Clawd 桌宠】用户桌面上有一只小螃蟹 Clawd。想让它做动作或替你在桌面说句话时，在回复里写（独占一行）：\n' +
+  return '【Clawd 桌宠】用户桌面上有一个毛绒阿衡桌宠。想让它做动作或替你在桌面说句话时，在回复里写（独占一行）：\n' +
     '<clawd anim="动作">一句简短的话（可留空）</clawd>\n' +
     '动作：happy love shy dizzy annoyed error notify double_jump look reading yawn doze bubble coffee headphones collapse sleep think typing juggling ultrathink building wizard surf toast jelly。' +
     '一条回复最多 3 个，会按出现顺序连播（每句话跟着自己的动作出来）；只在情绪或场景合适时用，不要每句都加。';
@@ -603,11 +604,11 @@ function tagGuideText() {
 function promptMode() {
   const m = settings && settings.link && settings.link.promptMode;
   if (m) return m;
-  try { if (typeof getEnv === 'function') { const v = String(getEnv('CLAWD_TAG_PROMPT_MODE') || '').trim(); if (v) return v; } } catch (e) { }
+  try { if (typeof getEnv === 'function') { const v = String(getEnv('PLUSH_HENG_TAG_PROMPT_MODE') || '').trim(); if (v) return v; } } catch (e) { }
   return 'attach';
 }
 // 已挂过说明的对话：存在环境变量里（钩子可能跑在没加载 settings 的上下文，环境变量两边都读得到）
-const GUIDED_ENV = 'CLAWD_TAG_GUIDED';
+const GUIDED_ENV = 'PLUSH_HENG_TAG_GUIDED';
 function guidedChats() {
   try {
     if (typeof getEnv === 'function') { const o = JSON.parse(String(getEnv(GUIDED_ENV) || '{}')); if (o && typeof o === 'object') return o; }
@@ -632,7 +633,7 @@ function onPromptInput(event) {
     // 调试：记下 payload 里有什么，便于确认历史是否可用
     linkInfo.guideProbe = { keys: Object.keys(p).join(','), hist: hist.length,
       hasGuide: hist.some(function (t) { return String((t && t.content) || '').indexOf(GUIDE_ID) >= 0; }) };
-    try { Tools.SoftwareSettings.writeEnvironmentVariable('CLAWD_GUIDE_PROBE', JSON.stringify(linkInfo.guideProbe)); } catch (e) { }
+    try { Tools.SoftwareSettings.writeEnvironmentVariable('PLUSH_HENG_GUIDE_PROBE', JSON.stringify(linkInfo.guideProbe)); } catch (e) { }
     for (let i = 0; i < hist.length; i++) {
       if (String((hist[i] && hist[i].content) || '').indexOf(GUIDE_ID) >= 0) return null;
     }
@@ -738,7 +739,7 @@ function pushConfig() {
     const neo = skinNeo();   // 像素贴边素材自己已经「藏」了半截身子，画布不用再往外推
     Host.callStatic('configure', ctx, p.sizeDp | 0, +p.miniHide, +p.miniTrigger,
       p.longPressMs | 0, p.doubleTapMs | 0, b.widthDp | 0, b.maxHeightDp | 0);
-    Host.callStatic('setBubbleAnchor', ctx, 0.12, 0.9);
+    Host.callStatic('setBubbleAnchor', ctx, +b.anchorTop, +b.anchorBottom);
   } catch (e) { hostError = 'configure: ' + e; }
   try { Host.callStatic('setHitScale', ctx, +p.hitScale || 1); } catch (e) { }
 }
@@ -1331,7 +1332,7 @@ function reg(name, fn) {
 
 reg('status', async function () {
   return {
-    ok: true, version: '1.0.0', hostReady: hostReady, hostError: hostError, lastTickError: lastTickError,
+    ok: true, version: '0.1.2', hostReady: hostReady, hostError: hostError, lastTickError: lastTickError,
     native: hostReady ? nativeState() : null, busy: busy,
     speaking: speech.current, queue: speech.queue.length,
     chat: settings.chat, lastReplyAt: lastReply.at, lastEvent: lastEvent,
@@ -1357,7 +1358,7 @@ reg('set_config', async function (p) {
     try { await Tools.SoftwareSettings.writeEnvironmentVariable(PROMPT_ENV, promptEnabled() ? 'true' : 'false'); } catch (e) { }
   }
   if (pl && 'promptMode' in pl) {
-    try { await Tools.SoftwareSettings.writeEnvironmentVariable('CLAWD_TAG_PROMPT_MODE', promptMode()); } catch (e) { }
+    try { await Tools.SoftwareSettings.writeEnvironmentVariable('PLUSH_HENG_TAG_PROMPT_MODE', promptMode()); } catch (e) { }
   }
   if (hostReady) pushConfig();
   // 睡眠时间等写进页面的配置需要重建页面
