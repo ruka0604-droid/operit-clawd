@@ -10,6 +10,7 @@ root = Path(__file__).resolve().parents[1]
 src = root / "clawd_pet"
 manifest = json.loads((src / "manifest.json").read_text(encoding="utf-8"))
 assert manifest["toolpkg_id"] == "plush_heng"
+assert all(p["id"] != manifest["toolpkg_id"] for p in manifest["subpackages"])
 paths = {"manifest.json", manifest["main"]}
 paths.update(p["entry"] for p in manifest["subpackages"])
 paths.update(r["path"] for r in manifest["resources"])
@@ -24,7 +25,7 @@ for name in sorted(paths):
     assert (src / name).is_file(), name
     if name.endswith(".js") and shutil.which("node"):
         subprocess.run(["node", "--check", str(src / name)], check=True)
-out = root / "dist" / "plush_heng_v0.1.0.toolpkg"
+out = root / "dist" / "plush_heng_v0.1.1.toolpkg"
 out.parent.mkdir(exist_ok=True)
 with ZipFile(out, "w", ZIP_DEFLATED) as z:
     for name in sorted(paths):
