@@ -1,6 +1,6 @@
 "use strict";
-// Clawd 小档案（侧边栏）：整页 WebView 显示像素风档案
-var SUB = "clawd", PKG = "clawd_pet", TIMEOUT = 8000;
+// 毛绒阿衡小档案（侧边栏）：整页 WebView 显示像素风档案
+var SUB = "plush_heng", PKG = "plush_heng", TIMEOUT = 8000;
 function candidates(name) { return [SUB + ":" + name, PKG + ":" + SUB + ":" + name, PKG + ":" + name]; }
 function withTimeout(p, ms, label) {
   return new Promise(function (res, rej) {
@@ -33,7 +33,7 @@ function ArchiveScreen(ctx) {
   var kids = [];
   kids.push(ctx.UI.Row({ fillMaxWidth: true, verticalAlignment: "center", spacing: 8, padding: { left: 12, right: 8, top: 6, bottom: 2 } }, [
     ctx.UI.Icon({ name: "pets", tint: "#D97757", size: 22 }),
-    ctx.UI.Text({ text: "Clawd 小档案", style: "titleMedium", fontWeight: "bold", color: "#3D2B22", weight: 1 }),
+    ctx.UI.Text({ text: "毛绒阿衡小档案", style: "titleMedium", fontWeight: "bold", color: "#3D2B22", weight: 1 }),
     ctx.UI.IconButton({ onClick: load }, [ctx.UI.Icon({ name: "refresh", tint: "#D97757" })])
   ]));
   if (msg) kids.push(ctx.UI.Text({ text: msg, style: "labelMedium", color: "#B65450", padding: { left: 12 } }));
