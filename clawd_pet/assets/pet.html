@@ -57,7 +57,7 @@ cx.imageSmoothingEnabled = false;
 if (CFG.leanDeg != null) cv.style.setProperty('--lean', (+CFG.leanDeg || 0) + 'deg');
 if (CFG.leanShift != null) cv.style.setProperty('--shift', (+CFG.leanShift || 0) + '%');
 function wobble() { cv.classList.remove('wob'); void cv.offsetWidth; cv.classList.add('wob'); }
-var sp = { v: null, img: null, f: 0, n: 1, t: null, deadline: 0 }, sprCache = Object.create(null), sprOrder = [];
+var sp = { v: null, img: null, f: 0, n: 1, t: null, deadline: 0, retry: 0, failed: false }, sprCache = Object.create(null), sprOrder = [];
 var SPR_CACHE_LIMIT = 8, SPR_LOAD_TIMEOUT = 5000, SPR_MAX_FRAME = 512, SPR_MAX_PIXELS = 4194304;
 function sprImg(src) {
   var im = sprCache[src], at = sprOrder.indexOf(src);
@@ -76,7 +76,14 @@ function sprFail() {
     if (at >= 0) sprOrder.splice(at, 1);
   }
   sp.img = null;
-  // Keep the previous valid frame visible; a later state change can recover.
+  if (sp.retry < 1 && src) {
+    sp.retry++;
+    sp.t = setTimeout(function () {
+      sp.deadline = Date.now() + SPR_LOAD_TIMEOUT;
+      sp.img = sprImg(src); sprStep();
+    }, 1000);
+  } else { sp.failed = true; }
+  // Keep the previous valid frame visible; another explicit state may recover.
 }
 function sprDraw() {
   var im = sp.img; if (!im || !im.complete || !im.naturalWidth) return false;
@@ -109,7 +116,9 @@ function sprStep() {
 function sprStop() { clearTimeout(sp.t); sp.t = null; sp.img = null; cv.classList.remove('on'); }
 function sprPlay(name) {
   var vs = SPR[name], v = vs[Math.floor(Math.random() * vs.length)];
-  clearTimeout(sp.t);
+  if (sp.v && sp.v.src === v.src && !sp.failed && (sp.img || sp.t !== null) && cv.classList.contains('on')) return;
+  clearTimeout(sp.t); sp.t = null;
+  sp.retry = 0; sp.failed = false;
   sp.v = v; sp.f = 0; sp.deadline = Date.now() + SPR_LOAD_TIMEOUT; sp.img = sprImg(v.src);
   cv.classList.add('on');
   sprStep();
