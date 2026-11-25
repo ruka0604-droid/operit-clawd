@@ -51,7 +51,7 @@ function el(name) {
 }
 function has(name) { return !!IMGS[name] || !!SPR[name]; }
 
-// ---- 像素播放器：一张横排雪碧图，按 fps / hold / loop 逐帧画到 32×32 画布 ----
+// ---- 像素播放器：一张横排雪碧图，按 fps / hold / loop 逐帧画到与单帧尺寸一致的画布 ----
 var cv = document.getElementById('cv'), cx = cv.getContext('2d');
 cx.imageSmoothingEnabled = false;
 if (CFG.leanDeg != null) cv.style.setProperty('--lean', (+CFG.leanDeg || 0) + 'deg');
@@ -61,10 +61,14 @@ var sp = { v: null, img: null, f: 0, n: 1, t: null }, sprCache = {};
 function sprImg(src) { if (!sprCache[src]) { var i = new Image(); i.src = src; sprCache[src] = i; } return sprCache[src]; }
 function sprDraw() {
   var im = sp.img; if (!im || !im.complete || !im.naturalWidth) return false;
-  sp.n = Math.max(1, Math.round(im.naturalWidth / im.naturalHeight));
-  var fw = im.naturalWidth / sp.n;
-  cx.clearRect(0, 0, 32, 32);
-  cx.drawImage(im, sp.f * fw, 0, fw, im.naturalHeight, 0, 0, 32, 32);
+  var size = im.naturalHeight;
+  if (!size || im.naturalWidth % size !== 0) return false;
+  sp.n = im.naturalWidth / size;
+  if (cv.width !== size || cv.height !== size) { cv.width = size; cv.height = size; }
+  cx.imageSmoothingEnabled = size > 32;
+  cv.style.imageRendering = size > 32 ? 'auto' : 'pixelated';
+  cx.clearRect(0, 0, size, size);
+  cx.drawImage(im, sp.f * size, 0, size, size, 0, 0, size, size);
   return true;
 }
 function sprStep() {
