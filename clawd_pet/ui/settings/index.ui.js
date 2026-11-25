@@ -230,7 +230,7 @@ function Screen(ctx) {
       stepper(ctx, "每字阅读时间", b.typeCharMs, "ms", 10, 0, 300, function (n) { return patch({ bubble: { typeCharMs: n } }); }, "按字数追加等待，越大越慢"),
       stepper(ctx, "显示完后停留", (b.segmentMs || 0) / 1000, "秒", 0.5, 1, 10, function (n) { return patch({ bubble: { segmentMs: Math.round(n * 1000) } }); }, "最后一条出现后多久收起"),
       stepper(ctx, "气泡宽度", b.widthDp, "dp", 10, 160, 360, function (n) { return patch({ bubble: { widthDp: n } }); }),
-      stepper(ctx, "气泡位置", b.anchorTop, "", 0.02, 0.2, 0.8, function (n) { return patch({ bubble: { anchorTop: n } }); }, "越大越贴近 Clawd 头顶"),
+      stepper(ctx, "气泡位置", b.anchorTop, "", 0.02, 0.04, 0.8, function (n) { return patch({ bubble: { anchorTop: n } }); }, "越大越贴近 Clawd 头顶"),
       hint(ctx, "点击气泡或轻戳 Clawd 可跳到下一条；全部显示完后再点一下即收起"),
       ctx.UI.Row({ fillMaxWidth: true, verticalAlignment: "center", spacing: 6 }, [
         ctx.UI.TextField({ value: testText, onValueChange: setTestText, singleLine: true, placeholder: "输入一句话，预览气泡效果", weight: 1 }),
