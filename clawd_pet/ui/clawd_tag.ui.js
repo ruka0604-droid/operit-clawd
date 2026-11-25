@@ -29,7 +29,7 @@ function Screen(ctx) {
   var subColor = cs.onSurfaceVariant || C.sub;
 
   function replay() {
-    var name = text ? "clawd:clawd_say" : "clawd:clawd_play";
+    var name = text ? "plush_heng:clawd_say" : "plush_heng:clawd_play";
     var params = text ? { text: text, anim: anim || undefined } : { name: anim || "happy" };
     setSent(1);
     try {
@@ -39,7 +39,7 @@ function Screen(ctx) {
 
   var right = [];
   if (text) right.push(UI.Text({ text: text, fontSize: 14, color: textColor }));
-  var meta = "🦀 Clawd" + (label ? " · " + label : "");
+  var meta = "🧸 毛绒阿衡" + (label ? " · " + label : "");
   var hint = sent === 1 ? "  ·  发送中…" : sent === 2 ? "  ·  已重播" : sent === 3 ? "  ·  桌宠没响应" : "  ·  点我重播";
   right.push(UI.Text({ text: meta + hint, fontSize: 11, color: subColor }));
 
