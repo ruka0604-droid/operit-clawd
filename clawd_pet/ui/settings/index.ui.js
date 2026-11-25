@@ -1,7 +1,7 @@
 "use strict";
 // Clawd 设置页（侧边栏）
 // 通过 ctx.callTool('clawd:clawd_xxx') 调子包工具；串行调用 + 超时，参考 DS 桌宠控制台的经验
-var SUB = "clawd", PKG = "clawd_pet", TIMEOUT = 8000;
+var SUB = "plush_heng", PKG = "plush_heng", TIMEOUT = 8000;
 
 var C = {
   bg: "#FBF6F2", card: "#FFFFFF", accentSoft: "#F7E3D9",
@@ -135,7 +135,7 @@ function Screen(ctx) {
   kids.push(ctx.UI.Row({ fillMaxWidth: true, verticalAlignment: "center", spacing: 8, padding: { bottom: 4 } }, [
     ctx.UI.Icon({ name: "pets", tint: C.primary, size: 26 }),
     ctx.UI.Column({ weight: 1, spacing: 0 }, [
-      ctx.UI.Text({ text: "Clawd 桌宠", style: "titleLarge", fontWeight: "bold", color: C.text }),
+      ctx.UI.Text({ text: "毛绒阿衡桌宠", style: "titleLarge", fontWeight: "bold", color: C.text }),
       hint(ctx, "双击聊天 · 轻戳互动 · 长按看亲密度 · 拖到屏幕边缘可贴边")
     ])
   ]));
@@ -148,7 +148,7 @@ function Screen(ctx) {
     var stLine = !st ? "…" : (!st.hostReady ? "宿主未就绪：" + s(st.hostError)
       : (nat.visible ? "运行中 · " + (nat.mode === "mini" ? "贴" + (nat.side === "left" ? "左" : "右") + "边" : "自由悬浮") : "已隐藏"));
     if (nat.canOverlay === false) stLine = "⚠ 没有悬浮窗权限";
-    // 养成摘要（完整档案在侧边栏「Clawd 小档案」）
+    // 养成摘要（完整档案在侧边栏「毛绒阿衡小档案」）
     if (arc && arc.level) {
       var lvl = arc.level;
       kids.push(card(ctx, "亲密度", [
@@ -161,7 +161,7 @@ function Screen(ctx) {
           return cells;
         })()),
         hint(ctx, "图鉴 " + arc.unlocked + "/" + arc.total + (arc.next ? " · 下个：" + arc.next.name + "（" + arc.next.gap + "）" : "")),
-        hint(ctx, "完整档案和动作图鉴见侧边栏「Clawd 小档案」")
+        hint(ctx, "完整档案和动作图鉴见侧边栏「毛绒阿衡小档案」")
       ]));
     }
 
@@ -202,13 +202,13 @@ function Screen(ctx) {
         }
       }
       pickKids.push(ctx.UI.Row({ fillMaxWidth: true, verticalAlignment: "center", spacing: 6 }, [
-        ctx.UI.TextField({ value: newTitle, onValueChange: setNewTitle, singleLine: true, placeholder: "新对话标题（默认 🦀 Clawd）", weight: 1 }),
+        ctx.UI.TextField({ value: newTitle, onValueChange: setNewTitle, singleLine: true, placeholder: "新对话标题（默认 🧸 毛绒阿衡）", weight: 1 }),
         btn(ctx, "新建", "add", createBind)
       ]));
       pickKids.push(btn(ctx, "收起", "expand_less", function () { setShowPick(false); }));
     }
     kids.push(card(ctx, "绑定对话", [
-      ctx.UI.Text({ text: ch.chatId ? "当前：" + s(ch.chatTitle) : "尚未绑定，首次发消息时将自动新建「" + s(ch.chatTitle || "🦀 Clawd") + "」",
+      ctx.UI.Text({ text: ch.chatId ? "当前：" + s(ch.chatTitle) : "尚未绑定，首次发消息时将自动新建「" + s(ch.chatTitle || "🧸 毛绒阿衡") + "」",
         style: "bodyMedium", color: C.text }),
       ch.chatId ? hint(ctx, "ID " + s(ch.chatId)) : ctx.UI.Spacer({ height: 0 }),
       btn(ctx, showPick ? "刷新列表" : "选择或新建对话", "forum", loadChats),
@@ -263,7 +263,7 @@ function Screen(ctx) {
         function (v) { return patch({ link: { tag: v } }); }),
       tagOn ? switchRow(ctx, "显示标签内文字", "关闭后只做动作，不弹出气泡", lk.tagSay !== false,
         function (v) { return patch({ link: { tagSay: v } }); }) : ctx.UI.Spacer({ height: 0 }),
-      tagOn ? switchRow(ctx, "向 AI 说明标签用法", "与输入菜单中的「🦀 Clawd 标签」开关同步", lk.tagPrompt !== false,
+      tagOn ? switchRow(ctx, "向 AI 说明标签用法", "与输入菜单中的「🧸 毛绒阿衡 标签」开关同步", lk.tagPrompt !== false,
         function (v) { return patch({ link: { tagPrompt: v } }); }) : ctx.UI.Spacer({ height: 0 }),
       (tagOn && lk.tagPrompt !== false) ? switchRow(ctx, "保存说明到聊天记录",
         lk.promptMode === "system" ? "当前：每次请求时临时加入系统提示词，不保存" : "当前：作为附件随消息保存，每个对话仅添加一次，有利于缓存命中",
