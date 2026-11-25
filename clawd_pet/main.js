@@ -1173,10 +1173,10 @@ async function arcPic(anim, cls) {
   return '<canvas class="spr ' + (cls || '') + '" width="32" height="32"></canvas>';
 }
 const ARC_JS = '<script>(function(){var L=[].slice.call(document.querySelectorAll("canvas.spr"));' +
-  'L.forEach(function(c){var im=new Image();im.onload=function(){var x=c.getContext("2d");x.imageSmoothingEnabled=false;' +
-  'var n=Math.max(1,Math.round(im.naturalWidth/32)),fps=+c.dataset.fps||4,loop=c.dataset.loop==="1",' +
+  'L.forEach(function(c){var im=new Image();im.onload=function(){var z=im.naturalHeight;if(!z||im.naturalWidth%z!==0)return;c.width=z;c.height=z;c.style.imageRendering=z>32?"auto":"pixelated";var x=c.getContext("2d");x.imageSmoothingEnabled=z>32;' +
+  'var n=im.naturalWidth/z,fps=+c.dataset.fps||4,loop=c.dataset.loop==="1",' +
   'h=(c.dataset.hold||"").split(",").filter(Boolean).map(Number),i=0;' +
-  'function d(){x.clearRect(0,0,32,32);x.drawImage(im,i*32,0,32,32,0,0,32,32);}' +
+  'function d(){x.clearRect(0,0,z,z);x.drawImage(im,i*z,0,z,z,0,0,z,z);}' +
   'function s(){d();var w=1000/fps*(h[i]||1);if(i<n-1){i++;}else if(loop){i=0;}else{setTimeout(function(){i=0;s();},2500);return;}setTimeout(s,w);}' +
   'if(c.classList.contains("locked")){d();return;}s();};im.src=c.dataset.src;});})();</script>';
 
