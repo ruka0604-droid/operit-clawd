@@ -40,7 +40,7 @@ function Screen(ctx) {
   var right = [];
   if (text) right.push(UI.Text({ text: text, fontSize: 14, color: textColor }));
   var meta = "🧸 毛绒阿衡" + (label ? " · " + label : "");
-  var hint = sent === 1 ? "  ·  发送中…" : sent === 2 ? "  ·  已重播" : sent === 3 ? "  ·  桌宠没响应" : "  ·  点我重播";
+  var hint = sent === 1 ? "  ·  发送中…" : sent === 2 ? "  ·  已提交重播" : sent === 3 ? "  ·  桌宠没响应" : "  ·  点我重播";
   right.push(UI.Text({ text: meta + hint, fontSize: 11, color: subColor }));
 
   return UI.Card({

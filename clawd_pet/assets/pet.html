@@ -98,6 +98,7 @@ function sprDraw() {
   return true;
 }
 function sprStep() {
+  sp.t = null;
   if (!sp.img) return;
   if (!sp.img.complete) {
     if (Date.now() >= sp.deadline) { sprFail(); return; }
@@ -107,6 +108,7 @@ function sprStep() {
   catch (e) { sprFail(); return; }
   var v = sp.v, h = (v.hold && v.hold[sp.f]) || 1;
   sp.t = setTimeout(function () {
+    sp.t = null;
     if (sp.f + 1 < sp.n) sp.f++;
     else if (v.loop !== false) sp.f = 0;
     else return;            // 不循环：停在最后一帧
@@ -116,7 +118,7 @@ function sprStep() {
 function sprStop() { clearTimeout(sp.t); sp.t = null; sp.img = null; cv.classList.remove('on'); }
 function sprPlay(name) {
   var vs = SPR[name], v = vs[Math.floor(Math.random() * vs.length)];
-  if (sp.v && sp.v.src === v.src && !sp.failed && (sp.img || sp.t !== null) && cv.classList.contains('on')) return;
+  if (sp.v && sp.v.src === v.src && v.loop !== false && sp.v.loop !== false && !sp.failed && (sp.img || sp.t !== null) && cv.classList.contains('on')) return;
   clearTimeout(sp.t); sp.t = null;
   sp.retry = 0; sp.failed = false;
   sp.v = v; sp.f = 0; sp.deadline = Date.now() + SPR_LOAD_TIMEOUT; sp.img = sprImg(v.src);

@@ -111,7 +111,7 @@ function Screen(ctx) {
       setCfg(next);
     }
     return call(ctx, "clawd_set_config", { patch: p }).then(function (r) {
-      if (r && r.ok === false) setMsg("保存失败：" + s(r.error)); else if (okText) setMsg(okText);
+      if (!r || r.ok !== true) { setMsg("保存失败：" + s(r && r.error)); return refresh(); } if (r.settings) setCfg(r.settings); if (okText) setMsg(okText);
     }, function (e) { setMsg("保存失败：" + s(e && e.message || e)); });
   }
   function loadChats() {
@@ -120,7 +120,8 @@ function Screen(ctx) {
       function (e) { setMsg("读取对话失败：" + s(e && e.message || e)); });
   }
   function bind(id) {
-    return call(ctx, "clawd_bind_chat", { chatId: id }).then(function () {
+    return call(ctx, "clawd_bind_chat", { chatId: id }).then(function (r) {
+      if (!r || r.ok !== true) { setMsg("绑定失败：" + s(r && r.error)); return; }
       setShowPick(false); setMsg("已绑定"); return refresh();
     });
   }
@@ -278,8 +279,8 @@ function Screen(ctx) {
     var p = cfg.pet || {};
     kids.push(card(ctx, "外观与手势", [
       stepper(ctx, "大小", p.sizeDp, "dp", 10, 60, 200, function (n) { return patch({ pet: { sizeDp: n } }); }),
-      stepper(ctx, "触摸范围", p.hitScale == null ? 1 : p.hitScale, "倍", 0.1, 0.6, 1.6, function (n) { return patch({ pet: { hitScale: Math.round(n * 10) / 10 } }); }, "只有点到 Clawd 身上才算；嫌难点就调大，老误触就调小"),
-      stepper(ctx, "贴边隐藏比例", p.miniHide, "", 0.05, 0.2, 0.7, function (n) { return patch({ pet: { miniHide: n } }); }, "越大藏得越多"),
+      stepper(ctx, "触摸范围", p.hitScale == null ? 1 : p.hitScale, "倍", 0.1, 1.4, 1.6, function (n) { return patch({ pet: { hitScale: Math.round(n * 10) / 10 } }); }, "只有点到 Clawd 身上才算；嫌难点就调大，老误触就调小"),
+      stepper(ctx, "贴边隐藏比例", p.miniHide, "", 0.05, 0, 0.25, function (n) { return patch({ pet: { miniHide: n } }); }, "预览版限制为25%，避免贴边后无法点中"),
       stepper(ctx, "双击间隔", p.doubleTapMs, "ms", 25, 150, 500, function (n) { return patch({ pet: { doubleTapMs: n } }); }, "两次点击在此时间内算双击"),
       stepper(ctx, "长按时长", p.longPressMs, "ms", 50, 300, 1500, function (n) { return patch({ pet: { longPressMs: n } }); }, "按住超过此时长算长按"),
       stepper(ctx, "自动入睡", p.sleepAfterMin, "分钟", 1, 1, 60, function (n) { return patch({ pet: { sleepAfterMin: n } }); }, "无互动超过此时长后睡觉")

@@ -14,7 +14,6 @@ const PKG_ID = 'plush_heng';
 const HOST_CLASS = 'clawd_pet.ClawdHost';
 const DEX_KEY = 'clawd_host_dex';
 const CFG_DIR = '/sdcard/Download/Operit/plugins/plush_heng';
-const LEGACY_DIR = '/sdcard/Download/Operit/plugins/com.clawd.desk';   // 改名前的配置目录
 const SETTINGS_PATH = CFG_DIR + '/settings.json';
 const TICK_MS = 250;
 
@@ -72,7 +71,7 @@ async function buildSpr() {
 const DEFAULTS = {
   formatVersion: 1,
   pet: { visible: true, sizeDp: 110, x: -1, y: -1, startMode: 'free', skin: 'neo', hitScale: 1.4,
-         miniHide: 0.42, miniTrigger: 0.18, longPressMs: 600, doubleTapMs: 300,
+         miniHide: 0.20, miniTrigger: 0.18, longPressMs: 600, doubleTapMs: 300,
          sleepAfterMin: 5 },
   chat: {
     chatId: '',                 // 绑定的对话 ID；空 = 首次发消息时自动新建
@@ -166,18 +165,13 @@ async function writeText(p, s) {
 }
 async function ensureDir(p) { try { await Tools.Files.mkdir(p, true); } catch (e) { } }
 
-// 旧版（com.clawd.desk）的设置、养成数据、素材：新目录还没有设置时整份搬过来，旧目录原样保留
-let migrateInfo = '';
-async function migrateLegacy() {
-  if (await readText(SETTINGS_PATH)) return;
-  if (!(await readText(LEGACY_DIR + '/settings.json'))) return;
-  const done = [];
-  for (const f of ['settings.json', 'stats.json', 'stats.backup.json']) {
-    const t = await readText(LEGACY_DIR + '/' + f);
-    if (t && await writeText(CFG_DIR + '/' + f, t)) done.push(f);
-  }
-  try { await Tools.Files.copy(LEGACY_DIR + '/sprites', CFG_DIR + '/sprites', true); done.push('sprites'); } catch (e) { }
-  migrateInfo = 'migrated: ' + done.join(',');
+let migrateInfo = 'isolated';
+function normalizePreviewSettings(cfg) {
+  const p = cfg.pet = Object.assign({}, DEFAULTS.pet, cfg.pet || {});
+  const hide = Number(p.miniHide), hit = Number(p.hitScale);
+  p.miniHide = Number.isFinite(hide) ? Math.max(0, Math.min(0.25, hide)) : 0.20;
+  p.hitScale = Number.isFinite(hit) ? Math.max(1.4, Math.min(1.6, hit)) : 1.4;
+  return cfg;
 }
 async function loadSettings() {
   await ensureDir(CFG_DIR);
@@ -185,11 +179,11 @@ async function loadSettings() {
   let user = {};
   const raw = await readText(SETTINGS_PATH);
   if (raw) { try { user = JSON.parse(raw); } catch (e) { user = {}; } }
-  settings = deepMerge(DEFAULTS, user);
+  settings = normalizePreviewSettings(deepMerge(DEFAULTS, user));
   return settings;
 }
 // ==================== 像素素材：首次运行（或升级）时从包里释放到 CFG_DIR/sprites ====================
-const SPRITE_VER = 'plush-preview-0.1.1';
+const SPRITE_VER = 'plush-preview-0.1.3';
 const SHIP_SPRITES = ['ai_idle'];
 let spriteInfo = '';
 async function copyOver(src, dst) {
@@ -220,6 +214,9 @@ async function saveSettings() {
   if (!await writeText(SETTINGS_PATH, JSON.stringify(settings, null, 2))) throw new Error('settings write failed');
 }
 
+async function saveSettingsBestEffort() {
+  try { await saveSettings(); return true; } catch (e) { lastTickError = 'save: ' + e; return false; }
+}
 // ==================== 宿主 ====================
 async function ensureHost(force) {
   if (hostReady && !force) {
@@ -251,10 +248,10 @@ async function ensureHost(force) {
 function nativeState() {
   try { return JSON.parse(String(Host.callStatic('getState', ctx))); } catch (e) { return { error: String(e) }; }
 }
-function evalPet(js) { try { Host.callStatic('evalPet', ctx, js); } catch (e) { hostError = 'evalPet: ' + e; } }
+function evalPet(js) { try { Host.callStatic('evalPet', ctx, js); return true; } catch (e) { hostError = 'evalPet: ' + e; return false; } }
 function evalBubble(js) { try { Host.callStatic('evalBubble', ctx, js); } catch (e) { hostError = 'evalBubble: ' + e; } }
 function bubbleCall(evt, data) { evalBubble('window.bubble&&window.bubble(' + JSON.stringify(evt) + ',' + JSON.stringify(data || {}) + ')'); }
-function petPlay(name, ms) { evalPet('window.clawdPlay&&window.clawdPlay(' + JSON.stringify(name) + ',' + (ms | 0) + ')'); }
+function petPlay(name, ms) { return evalPet('window.clawdPlay&&window.clawdPlay(' + JSON.stringify(name) + ',' + (ms | 0) + ')'); }
 
 // ==================== 跟随对话状态 ====================
 // 「工作」是一个持续状态：设了就一直播，直到 setWork(null)
@@ -566,7 +563,7 @@ async function setPromptEnabled(on) {
   if (settings) {
     settings.link = settings.link || {};
     settings.link.tagPrompt = !!on;
-    await saveSettings();
+    await saveSettingsBestEffort();
   }
   try { await Tools.SoftwareSettings.writeEnvironmentVariable(PROMPT_ENV, on ? 'true' : 'false'); } catch (e) { }
   // 重新打开时清掉「已挂过」记录，下一条消息重新挂一次说明
@@ -596,7 +593,7 @@ async function onInputMenuToggle(event) {
 // 标签用法说明正文（两种注入方式共用）
 const GUIDE_ID = 'clawd_tag_guide';
 function tagGuideText() {
-  return '【Clawd 桌宠】用户桌面上有一个毛绒阿衡桌宠。想让它做动作或替你在桌面说句话时，在回复里写（独占一行）：\n' +
+  return '【毛绒阿衡桌宠】用户桌面上有一个毛绒阿衡桌宠。想让它做动作或替你在桌面说句话时，在回复里写（独占一行）：\n' +
     '<clawd anim="动作">一句简短的话（可留空）</clawd>\n' +
     '动作：happy love shy dizzy annoyed error notify double_jump look reading yawn doze bubble coffee headphones collapse sleep think typing juggling ultrathink building wizard surf toast jelly。' +
     '一条回复最多 3 个，会按出现顺序连播（每句话跟着自己的动作出来）；只在情绪或场景合适时用，不要每句都加。';
@@ -951,7 +948,7 @@ async function ensureChatId() {
   if (!id) throw new Error('新建对话失败');
   try { await Tools.Chat.updateTitle(id, c.chatTitle || '🧸 毛绒阿衡'); } catch (e) { }
   settings.chat.chatId = id;
-  await saveSettings();
+  await saveSettingsBestEffort();
   return id;
 }
 
@@ -995,7 +992,7 @@ async function sendToChat(text) {
 // ==================== 养成 ====================
 const STATS_PATH = CFG_DIR + '/stats.json';
 const LEVELS = [0, 30, 80, 160, 300, 500, 800, 1200];
-const LEVEL_NAMES = ['陌生蟹', '点头之交', '熟蟹', '好朋友', '老朋友', '挚友', '灵魂伙伴', '命中注定'];
+const LEVEL_NAMES = ['初相识', '点头之交', '渐熟悉', '好朋友', '老朋友', '挚友', '灵魂伙伴', '命中注定'];
 // 动作图鉴：need 为空 = 一开始就有
 const UNLOCKS = [
   { anim: 'look', name: '东张西望', need: null },
@@ -1162,7 +1159,7 @@ function flushCheer() {
 }
 // 小档案页（像素风），写成文件给设置页的 WebView 读
 // 档案页用的素材：PNG 序列帧（canvas 逐帧画）
-async function arcPic(anim, cls) {
+async function arcPic(anim, cls, ver) {
   if (skinNeo()) {
     let f = NEO_MAP['idle_' + anim] || NEO_MAP[anim];
     if (Array.isArray(f)) f = f[0];
@@ -1170,7 +1167,7 @@ async function arcPic(anim, cls) {
       let cfg = arcPic.cfg;
       if (!cfg) { try { cfg = JSON.parse(await readText(CFG_DIR + '/sprites/sprites.json')) || {}; } catch (e) { cfg = {}; } arcPic.cfg = cfg; }
       const c = cfg[f] || {};
-      return '<canvas class="spr ' + (cls || '') + '" width="32" height="32" data-src="sprites/' + f + '.png?v=' + Date.now() +
+      return '<canvas class="spr ' + (cls || '') + '" width="32" height="32" data-src="sprites/' + f + '.png?v=' + ver +
         '" data-fps="' + (+c.fps || 4) + '" data-loop="' + (c.loop !== false ? 1 : 0) + '" data-hold="' + (c.hold ? c.hold.join(',') : '') + '"></canvas>';
     }
   }
@@ -1190,11 +1187,12 @@ async function buildArchive() {
   let bar = '';
   for (let i = 0; i < cells; i++) bar += '<b' + (i < on ? ' class="on"' : '') + '></b>';
   arcPic.cfg = null;
-  const face = await arcPic(L.lv >= 3 ? 'love' : 'idle', '');
+  const ver = Date.now();
+  const face = await arcPic(L.lv >= 3 ? 'love' : 'idle', '', ver);
   let tiles = '';
   for (const u of UNLOCKS) {
     const got = stats.unlocked.indexOf(u.anim) >= 0;
-    const img = await arcPic(u.anim, got ? '' : 'locked');
+    const img = await arcPic(u.anim, got ? '' : 'locked', ver);
     tiles += '<div class="tile' + (got ? '' : ' lock') + '"><div class="pic">' + img + '</div>' +
       '<div class="nm">' + (got ? unlockName(u) : '？？？') + '</div>' +
       '<div class="hw">' + (got ? (u.how || '发呆时') : needGap(u.need)) + '</div></div>';
@@ -1239,7 +1237,7 @@ function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
 function openInput() {
   stopSpeech();
-  bubbleCall('input', { title: busy ? 'Clawd 还在想上一句…' : '跟 Clawd 说点什么', draft: draft });
+  bubbleCall('input', { title: busy ? 'Clawd 还在想上一句…' : '跟毛绒阿衡说点什么', draft: draft });
   try { Host.callStatic('setInputMode', ctx, true); } catch (e) { hostError = 'setInputMode: ' + e; }
 }
 
@@ -1294,7 +1292,7 @@ function onTick() {
   if (ev.dragEnd) {
     settings.pet.x = ev.dragEnd.x; settings.pet.y = ev.dragEnd.y;
     settings.pet.startMode = ev.dragEnd.mode === 'mini' ? 'mini:' + ev.dragEnd.side : 'free';
-    saveSettings();
+    saveSettingsBestEffort();
   }
 }
 
@@ -1332,7 +1330,7 @@ function reg(name, fn) {
 
 reg('status', async function () {
   return {
-    ok: true, version: '0.1.2', hostReady: hostReady, hostError: hostError, lastTickError: lastTickError,
+    ok: true, version: '0.1.3', hostReady: hostReady, hostError: hostError, lastTickError: lastTickError,
     native: hostReady ? nativeState() : null, busy: busy,
     speaking: speech.current, queue: speech.queue.length,
     chat: settings.chat, lastReplyAt: lastReply.at, lastEvent: lastEvent,
@@ -1350,8 +1348,9 @@ reg('archive', async function () {
 reg('set_config', async function (p) {
   const pageCfg = function () { return JSON.stringify([settings.pet, settings.idle]); };
   const before = pageCfg();
-  settings = deepMerge(settings, p.patch || {});
-  await saveSettings();
+  const previous = settings;
+  settings = normalizePreviewSettings(deepMerge(settings, p.patch || {}));
+  try { await saveSettings(); } catch (e) { settings = previous; throw e; }
   // 设置页改了标签提示词：同步环境变量镜像，和输入菜单开关保持一致
   const pl = (p.patch && p.patch.link) || null;
   if (pl && ('tagPrompt' in pl || 'tag' in pl)) {
@@ -1369,13 +1368,17 @@ reg('set_config', async function (p) {
   return { ok: true, settings: settings };
 });
 reg('show', async function () {
-  settings.pet.visible = true; await saveSettings();
-  return await showPet();
+  settings.pet.visible = true;
+  const saved = await saveSettingsBestEffort();
+  const result = await showPet();
+  if (!saved) result.warning = 'settings write failed';
+  return result;
 });
 reg('hide', async function () {
-  settings.pet.visible = false; await saveSettings();
+  settings.pet.visible = false;
   hidePet();
-  return { ok: true };
+  const saved = await saveSettingsBestEffort();
+  return { ok: true, warning: saved ? undefined : 'settings write failed' };
 });
 reg('reload', async function () {
   hidePet();
@@ -1385,16 +1388,18 @@ reg('reload', async function () {
   await ensureHost(true);
   return await showPet();
 });
+function petAvailable() { return hostReady && nativeState().visible === true; }
 reg('say', async function (p) {
-  if (!hostReady) return { ok: false, error: 'host not ready' };
+  if (!petAvailable()) return { ok: false, error: 'pet not visible or host not ready' };
   const segs = p.segments && p.segments.length ? p.segments : splitSegments(cleanReply(p.text || ''));
   if (!segs.length) return { ok: false, error: 'empty' };
   speak(segs, { anim: p.anim || '' });
   return { ok: true, segments: segs.length };
 });
 reg('play', async function (p) {
-  petPlay(String(p.name || 'happy'), p.durationMs | 0 || 3000);
-  return { ok: true };
+  if (!petAvailable()) return { ok: false, error: 'pet not visible or host not ready' };
+  const ok = petPlay(String(p.name || 'happy'), p.durationMs | 0 || 3000);
+  return ok ? { ok: true, submitted: true } : { ok: false, error: hostError };
 });
 reg('mode', async function (p) {
   try { Host.callStatic('setMode', ctx, String(p.mode || 'free')); } catch (e) { return { ok: false, error: String(e) }; }

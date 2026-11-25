@@ -10,6 +10,7 @@ root = Path(__file__).resolve().parents[1]
 src = root / "clawd_pet"
 manifest = json.loads((src / "manifest.json").read_text(encoding="utf-8"))
 assert manifest["toolpkg_id"] == "plush_heng"
+version = manifest["version"]
 assert all(p["id"] != manifest["toolpkg_id"] for p in manifest["subpackages"])
 sub = manifest["subpackages"][0]
 assert sub["id"] == "plush_heng_control"
@@ -18,6 +19,15 @@ package = (src / sub["entry"]).read_text(encoding="utf-8")
 metadata = json.loads(re.search(r"/\* METADATA\s*(.*?)\*/", package, re.S).group(1))
 assert metadata["name"] == sub["id"]
 main = (src / manifest["main"]).read_text(encoding="utf-8")
+assert "const PKG_ID = '" + manifest["toolpkg_id"] + "'" in main
+assert "const SPRITE_VER = 'plush-preview-" + version + "'" in main
+assert "version: '" + version + "'" in main
+assert 'toolpkg:' + manifest["toolpkg_id"] + ':ui:clawd_archive' in main
+assert sub["id"] + ":" in (src / "ui/clawd_tag.ui.js").read_text(encoding="utf-8")
+shipped = re.search(r"const SHIP_SPRITES = \[([^\]]*)\]", main).group(1)
+for sprite in re.findall(r"'([^']+)'", shipped):
+    assert any(x["key"] == "spr_" + sprite and x["path"] == "sprites/" + sprite + ".png" for x in manifest["resources"]), sprite
+assert shutil.which("node"), "Node.js required"
 for tool in metadata["tools"]:
     name = tool["name"]
     assert "exports." + name + " =" in package, name
@@ -38,9 +48,14 @@ cfg = json.loads((src / "sprites/sprites.json").read_text(encoding="utf-8"))
 assert len(cfg["ai_idle"]["hold"]) == 6
 for name in sorted(paths):
     assert (src / name).is_file(), name
-    if name.endswith(".js") and shutil.which("node"):
+    if name.endswith(".js"):
         subprocess.run(["node", "--check", str(src / name)], check=True)
-out = root / "dist" / "plush_heng_v0.1.2.toolpkg"
+    if name.endswith(".html"):
+        html = (src / name).read_text(encoding="utf-8")
+        for script in re.findall(r"<script\b[^>]*>(.*?)</script>", html, re.S | re.I):
+            subprocess.run(["node", "--check"], input=script, text=True, check=True)
+subprocess.run(["node", str(root / "tools/test_plush_preview.js")], check=True)
+out = root / "dist" / ("plush_heng_v" + version + ".toolpkg")
 out.parent.mkdir(exist_ok=True)
 with ZipFile(out, "w", ZIP_DEFLATED) as z:
     for name in sorted(paths):

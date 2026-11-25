@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "toolpkg_id": "plush_heng",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "api_version": "1.0.1",
   "main": "main.js",
   "author": [
@@ -26,7 +26,7 @@
         "en": "Plush Heng Control"
       },
       "description": {
-        "zh": "让 Clawd 说话、播动作、贴边，以及管理设置与绑定对话",
+        "zh": "让毛绒阿衡说话、播动作、贴边，以及管理设置与绑定对话",
         "en": "Speak, animate, dock, settings"
       }
     }

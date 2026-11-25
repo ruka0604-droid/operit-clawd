@@ -1,0 +1,22 @@
+const assert = require('node:assert/strict'), fs = require('node:fs'), vm = require('node:vm'), path = require('node:path');
+const html = fs.readFileSync(path.join(__dirname, '../clawd_pet/assets/pet.html'), 'utf8');
+const player = html.slice(html.indexOf('var sp = '), html.indexOf('function play(name, restart)'));
+assert(player.startsWith('var sp = '));
+let seq=0, jobs=new Map(), draws=[], fail=false;
+const classes=new Set();
+const cv={width:32,height:32,style:{},classList:{add:x=>classes.add(x),remove:x=>classes.delete(x),contains:x=>classes.has(x)}};
+const cx={clearRect(){},drawImage(...a){draws.push(a.slice(1));}};
+const c=vm.createContext({cv,cx,Date,Math,SPR:{idle:[{src:'idle',fps:8,loop:true,hold:[24,1,1,1,1,8]}],happy:[{src:'idle',fps:8,loop:true}],once:[{src:'once',fps:8,loop:false}],broken:[{src:'broken',fps:8,loop:true}]},Image:function(){this.complete=true;this.naturalWidth=fail?0:1536;this.naturalHeight=256;},setTimeout:fn=>{jobs.set(++seq,fn);return seq;},clearTimeout:id=>jobs.delete(id)});
+vm.runInContext(player,c);
+function tick(){const x=jobs.entries().next().value;assert(x);jobs.delete(x[0]);x[1]();}
+c.sprPlay('idle');assert.equal(cv.width,256);assert.equal(draws[0][2],256);tick();assert.equal(c.sp.f,1);
+const before=c.sp.t;c.sprPlay('happy');assert.equal(c.sp.f,1);assert.equal(c.sp.t,before);
+c.sprPlay('once');for(let i=0;i<6;i++)tick();assert.equal(c.sp.f,5);assert.equal(c.sp.t,null);assert.equal(jobs.size,0);
+c.sprPlay('once');assert.equal(c.sp.f,0);assert.equal(jobs.size,1);
+fail=true;c.sprPlay('broken');assert.equal(c.sp.retry,1);tick();assert.equal(c.sp.failed,true);assert.equal(jobs.size,0);
+fail=false;c.sprPlay('broken');assert.equal(c.sp.failed,false);assert.equal(c.sp.f,0);c.sprStop();assert.equal(jobs.size,0);
+const main=fs.readFileSync(path.join(__dirname,'../clawd_pet/main.js'),'utf8');
+const norm=main.slice(main.indexOf('function normalizePreviewSettings('),main.indexOf('async function loadSettings('));
+const n=vm.createContext({DEFAULTS:{pet:{miniHide:0.2,hitScale:1.4}}});vm.runInContext(norm,n);
+const cfg=n.normalizePreviewSettings({pet:{miniHide:0.7,hitScale:0.6}});assert.equal(cfg.pet.miniHide,0.25);assert.equal(cfg.pet.hitScale,1.4);
+console.log('PASS: 256px frames, loop continuity, single-shot replay, bounded recovery, timer cleanup, safe edge settings');
