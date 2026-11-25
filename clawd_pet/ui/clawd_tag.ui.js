@@ -33,7 +33,7 @@ function Screen(ctx) {
     var params = text ? { text: text, anim: anim || undefined } : { name: anim || "happy" };
     setSent(1);
     try {
-      Promise.resolve(ctx.callTool(name, params)).then(function () { setSent(2); }, function () { setSent(3); });
+      Promise.resolve(ctx.callTool(name, params)).then(function (r) { if (typeof r === 'string') { try { r = JSON.parse(r); } catch (e) { r = null; } } setSent(r && r.ok === true ? 2 : 3); }, function () { setSent(3); });
     } catch (e) { setSent(3); }
   }
 
