@@ -10,10 +10,10 @@
  */
 'use strict';
 
-const PKG_ID = 'clawd_pet';
+const PKG_ID = 'plush_heng';
 const HOST_CLASS = 'clawd_pet.ClawdHost';
 const DEX_KEY = 'clawd_host_dex';
-const CFG_DIR = '/sdcard/Download/Operit/plugins/clawd_pet';
+const CFG_DIR = '/sdcard/Download/Operit/plugins/plush_heng';
 const LEGACY_DIR = '/sdcard/Download/Operit/plugins/com.clawd.desk';   // 改名前的配置目录
 const SETTINGS_PATH = CFG_DIR + '/settings.json';
 const TICK_MS = 250;
@@ -71,12 +71,12 @@ async function buildSpr() {
 
 const DEFAULTS = {
   formatVersion: 1,
-  pet: { visible: true, sizeDp: 110, x: -1, y: -1, startMode: 'mini:right', skin: 'neo', hitScale: 1,
+  pet: { visible: true, sizeDp: 110, x: -1, y: -1, startMode: 'free', skin: 'neo', hitScale: 1.4,
          miniHide: 0.42, miniTrigger: 0.18, longPressMs: 600, doubleTapMs: 300,
          sleepAfterMin: 5 },
   chat: {
     chatId: '',                 // 绑定的对话 ID；空 = 首次发消息时自动新建
-    chatTitle: '🦀 Clawd',      // 自动新建时用的标题
+    chatTitle: '🧸 毛绒阿衡',      // 自动新建时用的标题
     autoCreate: true,
     hideUserMessage: false,     // 在对话里隐藏用户这条消息
     notifyReply: false,         // 回复完成发系统通知
@@ -181,7 +181,7 @@ async function migrateLegacy() {
 }
 async function loadSettings() {
   await ensureDir(CFG_DIR);
-  try { await migrateLegacy(); } catch (e) { migrateInfo = 'migrate error: ' + e; }
+  // Preview uses its own settings; never import Clawd's existing data.
   let user = {};
   const raw = await readText(SETTINGS_PATH);
   if (raw) { try { user = JSON.parse(raw); } catch (e) { user = {}; } }
@@ -189,8 +189,8 @@ async function loadSettings() {
   return settings;
 }
 // ==================== 像素素材：首次运行（或升级）时从包里释放到 CFG_DIR/sprites ====================
-const SPRITE_VER = 'plush-preview-0.1.0';
-const SHIP_SPRITES = ["ai_charge", "ai_drag", "ai_error", "ai_happy", "ai_idle", "ai_land", "ai_look", "ai_read", "ai_search", "ai_sleep", "ai_talk", "ai_tap", "ai_tool", "ai_type", "ai_walk", "ai_wave", "ai_write", "neo_angry", "neo_bash", "neo_bash_err", "neo_bash_hack", "neo_bash_npm", "neo_bash_test", "neo_confused", "neo_dock", "neo_done", "neo_drop", "neo_edge", "neo_edge_angry", "neo_edge_bash", "neo_edge_confused", "neo_edge_done", "neo_edge_err", "neo_edge_happy", "neo_edge_idle", "neo_edge_listen", "neo_edge_look", "neo_edge_sad", "neo_edge_search", "neo_edge_shock", "neo_edge_shy", "neo_edge_sleep", "neo_edge_sleep_bubble", "neo_edge_sleep_cap", "neo_edge_think", "neo_edge_toast", "neo_edge_type", "neo_edge_type_kb", "neo_fling", "neo_happy", "neo_jelly_full", "neo_listen", "neo_paint", "neo_poke", "neo_sad", "neo_search", "neo_shock", "neo_shy", "neo_sleep_bubble", "neo_sleep_cap", "neo_sleep_jelly", "neo_spin", "neo_surf", "neo_toast", "neo_type", "neo_type_kb", "neo_write_print", "neo_write_toast"];
+const SPRITE_VER = 'plush-preview-0.1.1';
+const SHIP_SPRITES = ['ai_idle'];
 let spriteInfo = '';
 async function copyOver(src, dst) {
   try { const r = await Tools.Files.copy(src, dst); if (!(r && r.success === false)) return; } catch (e) { }
@@ -579,7 +579,7 @@ async function onInputMenuToggle(event) {
     return {
       toggles: [{
         id: PROMPT_TOGGLE_ID,
-        title: '🦀 Clawd 标签',
+        title: '🧸 毛绒阿衡 标签',
         description: '开：告诉 AI 可以用 <clawd> 标签让桌宠做动作、说话；关：不注入（标签照样能识别）',
         isChecked: on,
         slot: 'general'
@@ -644,7 +644,7 @@ function onPromptInput(event) {
     const c = tagGuideText();
     const esc = c.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     linkInfo.guideAt = Date.now();
-    return input + '\n\n<attachment id="' + GUIDE_ID + '" filename="🦀 Clawd 标签说明" type="text/plain" size="' + c.length + '">' + esc + '</attachment>';
+    return input + '\n\n<attachment id="' + GUIDE_ID + '" filename="🧸 毛绒阿衡 标签说明" type="text/plain" size="' + c.length + '">' + esc + '</attachment>';
   } catch (e) { return null; }
 }
 // 告诉 AI 可以用 <clawd> 标签（不落盘：每次请求临时拼进系统提示词）
@@ -719,7 +719,7 @@ async function buildPetHtml() {
   const cfg = { sleepAfterMs: Math.max(1, settings.pet.sleepAfterMin) * 60000,
                 idleVariety: I.variety !== false, idleGapSec: +I.gapSec || 60, musicIdle: !!I.music, leanDeg: settings.pet.leanDeg == null ? 12 : +settings.pet.leanDeg, leanShift: settings.pet.leanShift == null ? 6 : +settings.pet.leanShift,
                 locked: lockedAnims() };
-  const sm = String(settings.pet.startMode || 'mini:right');
+  const sm = String(settings.pet.startMode || 'free');
   const init = sm.indexOf('mini:') === 0
     ? "clawdInit('mini'," + JSON.stringify(sm.slice(5)) + ");"
     : "clawdInit('free');";
@@ -736,9 +736,9 @@ function pushConfig() {
   const p = settings.pet, b = settings.bubble;
   try {
     const neo = skinNeo();   // 像素贴边素材自己已经「藏」了半截身子，画布不用再往外推
-    Host.callStatic('configure', ctx, p.sizeDp | 0, neo ? 0 : +p.miniHide, +p.miniTrigger,
+    Host.callStatic('configure', ctx, p.sizeDp | 0, +p.miniHide, +p.miniTrigger,
       p.longPressMs | 0, p.doubleTapMs | 0, b.widthDp | 0, b.maxHeightDp | 0);
-    Host.callStatic('setBubbleAnchor', ctx, neo ? 0.34 : +b.anchorTop, neo ? 0.68 : +b.anchorBottom);
+    Host.callStatic('setBubbleAnchor', ctx, 0.12, 0.9);
   } catch (e) { hostError = 'configure: ' + e; }
   try { Host.callStatic('setHitScale', ctx, +p.hitScale || 1); } catch (e) { }
 }
@@ -948,7 +948,7 @@ async function ensureChatId() {
   const created = await Tools.Chat.createNew(undefined, false, c.roleCardId || undefined);
   const id = created && created.chatId;
   if (!id) throw new Error('新建对话失败');
-  try { await Tools.Chat.updateTitle(id, c.chatTitle || '🦀 Clawd'); } catch (e) { }
+  try { await Tools.Chat.updateTitle(id, c.chatTitle || '🧸 毛绒阿衡'); } catch (e) { }
   settings.chat.chatId = id;
   await saveSettings();
   return id;
@@ -1322,7 +1322,7 @@ function ensureInit() {
 
 // ==================== IPC ====================
 function reg(name, fn) {
-  ToolPkg.ipc.on('clawd.' + name, function (payload, meta) {
+  ToolPkg.ipc.on('plush_heng.' + name, function (payload, meta) {
     return ensureInit().catch(function () { }).then(function () {
       return fn(payload || {}, meta);
     }).catch(function (e) { return { ok: false, error: String(e) }; });
@@ -1460,7 +1460,7 @@ function registerToolPkg() {
     // 设置 → 工具箱
     ToolPkg.registerToolboxUiModule({
       id: 'clawd_settings', runtime: 'compose_dsl', screen: Screen, params: {},
-      title: { zh: 'Clawd 桌宠设置', en: 'Clawd Settings' }
+      title: { zh: '毛绒阿衡设置', en: 'Clawd Settings' }
     });
   } catch (e) { hostError = 'registerUi: ' + e; }
   try {
@@ -1468,13 +1468,13 @@ function registerToolPkg() {
     const au = require('./ui/archive/index.ui.js');
     const Archive = au && (au.default || au);
     ToolPkg.registerUiRoute({
-      id: 'clawd_archive', route: 'toolpkg:clawd_pet:ui:clawd_archive',
+      id: 'clawd_archive', route: 'toolpkg:plush_heng:ui:clawd_archive',
       runtime: 'compose_dsl', screen: Archive, params: {},
-      title: { zh: 'Clawd 小档案', en: 'Clawd Archive' }
+      title: { zh: '毛绒阿衡小档案', en: 'Clawd Archive' }
     });
     ToolPkg.registerNavigationEntry({
-      id: 'clawd_archive_entry', route: 'toolpkg:clawd_pet:ui:clawd_archive',
-      surface: 'main_sidebar_plugins', title: { zh: 'Clawd 小档案', en: 'Clawd' },
+      id: 'clawd_archive_entry', route: 'toolpkg:plush_heng:ui:clawd_archive',
+      surface: 'main_sidebar_plugins', title: { zh: '毛绒阿衡小档案', en: 'Clawd' },
       icon: 'pets', order: 31
     });
   } catch (e) { hostError = 'registerArchive: ' + e; }
