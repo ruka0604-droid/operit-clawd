@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "toolpkg_id": "plush_heng",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "api_version": "1.0.1",
   "main": "main.js",
   "author": [
@@ -18,7 +18,7 @@
   "enabled_by_default": false,
   "subpackages": [
     {
-      "id": "plush_heng",
+      "id": "plush_heng_control",
       "entry": "packages/clawd.js",
       "enabled_by_default": true,
       "display_name": {
