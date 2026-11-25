@@ -1,6 +1,6 @@
 /* METADATA
 {
-  "name": "clawd",
+  "name": "plush_heng",
   "description": {
     "zh": "Clawd 桌宠：让桌面上的 Clawd 冒气泡说话、播放动作、贴边/出来，以及查看与修改设置。用户在桌宠上双击即可输入，消息会发到绑定的对话里，回复会以分段气泡显示。",
     "en": "Clawd desk pet: make Clawd speak in bubbles, play animations, dock to edges, and manage settings."
@@ -36,7 +36,7 @@
       "parameters": [
         { "name": "chatId", "type": "string", "description": "要绑定的对话 ID", "required": false },
         { "name": "create", "type": "boolean", "description": "true = 新建一个对话并绑定", "required": false },
-        { "name": "title", "type": "string", "description": "新建时的标题，默认「🦀 Clawd」", "required": false }
+        { "name": "title", "type": "string", "description": "新建时的标题，默认「🧸 毛绒阿衡」", "required": false }
       ] },
     { "name": "clawd_archive", "description": { "zh": "读取 Clawd 养成档案：亲密度等级、今天/累计互动次数、已解锁动作与下一个解锁条件；同时生成像素风档案页文件", "en": "Read Clawd growth archive" }, "parameters": [] },
     { "name": "clawd_test_filter",
@@ -60,16 +60,16 @@ function go(channel, payload) {
   }
 }
 
-exports.clawd_say = function (p) { p = p || {}; return go('clawd.say', { text: p.text, anim: p.anim }); };
-exports.clawd_play = function (p) { p = p || {}; return go('clawd.play', { name: p.name, durationMs: p.durationMs }); };
-exports.clawd_mode = function (p) { p = p || {}; return go('clawd.mode', { mode: p.mode }); };
-exports.clawd_show = function () { return go('clawd.show'); };
-exports.clawd_hide = function () { return go('clawd.hide'); };
-exports.clawd_reload = function () { return go('clawd.reload'); };
-exports.clawd_status = function () { return go('clawd.status'); };
-exports.clawd_get_config = function () { return go('clawd.get_config'); };
-exports.clawd_archive = function () { return go('clawd.archive'); };
-exports.clawd_set_config = function (p) { p = p || {}; return go('clawd.set_config', { patch: p.patch || {} }); };
-exports.clawd_list_chats = function () { return go('clawd.list_chats'); };
-exports.clawd_bind_chat = function (p) { p = p || {}; return go('clawd.bind_chat', { chatId: p.chatId, create: !!p.create, title: p.title }); };
-exports.clawd_test_filter = function (p) { p = p || {}; return go('clawd.test_filter', { text: p.text }); };
+exports.clawd_say = function (p) { p = p || {}; return go('plush_heng.say', { text: p.text, anim: p.anim }); };
+exports.clawd_play = function (p) { p = p || {}; return go('plush_heng.play', { name: p.name, durationMs: p.durationMs }); };
+exports.clawd_mode = function (p) { p = p || {}; return go('plush_heng.mode', { mode: p.mode }); };
+exports.clawd_show = function () { return go('plush_heng.show'); };
+exports.clawd_hide = function () { return go('plush_heng.hide'); };
+exports.clawd_reload = function () { return go('plush_heng.reload'); };
+exports.clawd_status = function () { return go('plush_heng.status'); };
+exports.clawd_get_config = function () { return go('plush_heng.get_config'); };
+exports.clawd_archive = function () { return go('plush_heng.archive'); };
+exports.clawd_set_config = function (p) { p = p || {}; return go('plush_heng.set_config', { patch: p.patch || {} }); };
+exports.clawd_list_chats = function () { return go('plush_heng.list_chats'); };
+exports.clawd_bind_chat = function (p) { p = p || {}; return go('plush_heng.bind_chat', { chatId: p.chatId, create: !!p.create, title: p.title }); };
+exports.clawd_test_filter = function (p) { p = p || {}; return go('plush_heng.test_filter', { text: p.text }); };
