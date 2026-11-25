@@ -47,6 +47,9 @@ const NEO_MAP = {
   edge_carrying: 'neo_edge_toast', edge_sweeping: 'neo_edge_toast', edge_toast: 'neo_edge_toast',
   fling: 'neo_fling', mini_slide: 'neo_edge'
 };
+// V0.1 preview: reuse one sprite for every existing animation state.
+// Keep state names and interaction logic unchanged for later artwork expansion.
+for (const state of Object.keys(NEO_MAP)) NEO_MAP[state] = 'ai_idle';
 function skinNeo() { return true; }   // 只剩像素皮肤
 async function buildSpr() {
   if (!skinNeo()) return {};
