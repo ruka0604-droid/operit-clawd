@@ -189,7 +189,7 @@ async function loadSettings() {
   return settings;
 }
 // ==================== 像素素材：首次运行（或升级）时从包里释放到 CFG_DIR/sprites ====================
-const SPRITE_VER = '1.0.0';
+const SPRITE_VER = 'plush-preview-0.1.0';
 const SHIP_SPRITES = ["ai_charge", "ai_drag", "ai_error", "ai_happy", "ai_idle", "ai_land", "ai_look", "ai_read", "ai_search", "ai_sleep", "ai_talk", "ai_tap", "ai_tool", "ai_type", "ai_walk", "ai_wave", "ai_write", "neo_angry", "neo_bash", "neo_bash_err", "neo_bash_hack", "neo_bash_npm", "neo_bash_test", "neo_confused", "neo_dock", "neo_done", "neo_drop", "neo_edge", "neo_edge_angry", "neo_edge_bash", "neo_edge_confused", "neo_edge_done", "neo_edge_err", "neo_edge_happy", "neo_edge_idle", "neo_edge_listen", "neo_edge_look", "neo_edge_sad", "neo_edge_search", "neo_edge_shock", "neo_edge_shy", "neo_edge_sleep", "neo_edge_sleep_bubble", "neo_edge_sleep_cap", "neo_edge_think", "neo_edge_toast", "neo_edge_type", "neo_edge_type_kb", "neo_fling", "neo_happy", "neo_jelly_full", "neo_listen", "neo_paint", "neo_poke", "neo_sad", "neo_search", "neo_shock", "neo_shy", "neo_sleep_bubble", "neo_sleep_cap", "neo_sleep_jelly", "neo_spin", "neo_surf", "neo_toast", "neo_type", "neo_type_kb", "neo_write_print", "neo_write_toast"];
 let spriteInfo = '';
 async function copyOver(src, dst) {
