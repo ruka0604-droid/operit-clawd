@@ -960,6 +960,10 @@ async function sendToChat(text) {
   try { Host.callStatic('showBubble', ctx); } catch (e) { }
   setWork('think');
   try {
+    // Chat creation and sending require the Operit chat service to be connected.
+    // Do not rely on a previously opened chat window remaining bound.
+    const connection = await Tools.Chat.startService({ keep_if_exists: true });
+    if (!connection || connection.isConnected !== true) throw new Error('Operit 聊天服务未连接');
     const chatId = await ensureChatId();
     const c = settings.chat;
     const res = await Tools.Chat.sendMessage(
