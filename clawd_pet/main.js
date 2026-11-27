@@ -183,7 +183,7 @@ async function loadSettings() {
   return settings;
 }
 // ==================== 像素素材：首次运行（或升级）时从包里释放到 CFG_DIR/sprites ====================
-const SPRITE_VER = 'plush-preview-0.1.3';
+const SPRITE_VER = 'plush-preview-0.1.4';
 const SHIP_SPRITES = ['ai_idle'];
 let spriteInfo = '';
 async function copyOver(src, dst) {
@@ -1334,7 +1334,7 @@ function reg(name, fn) {
 
 reg('status', async function () {
   return {
-    ok: true, version: '0.1.3', hostReady: hostReady, hostError: hostError, lastTickError: lastTickError,
+    ok: true, version: '0.1.4', hostReady: hostReady, hostError: hostError, lastTickError: lastTickError,
     native: hostReady ? nativeState() : null, busy: busy,
     speaking: speech.current, queue: speech.queue.length,
     chat: settings.chat, lastReplyAt: lastReply.at, lastEvent: lastEvent,
