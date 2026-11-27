@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "toolpkg_id": "plush_heng",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "api_version": "1.0.1",
   "main": "main.js",
   "author": [
