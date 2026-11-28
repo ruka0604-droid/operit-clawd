@@ -24,7 +24,7 @@ async function scenario(currentId, title='测试对话 A') {
   };
   vm.createContext(state);
   vm.runInContext(code.slice(a,b)+code.slice(c,d)+code.slice(e,f)+
-    '\\nthis.open=openInput;this.send=sendToChat;this.target=()=>inputChatTarget;this.clear=()=>{inputChatTarget=null}',state);
+    '\nthis.open=openInput;this.send=sendToChat;this.target=()=>inputChatTarget;this.clear=()=>{inputChatTarget=null}',state);
   await state.open();
   return {state,sent,labels};
 }
