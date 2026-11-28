@@ -9,7 +9,7 @@ async function scenario(currentId, title='测试对话 A') {
   const sent=[],labels=[];
   const state={
     settings:{chat:{chatId:'old-chat',timeoutMs:180000}},
-    busy:false,ctx:{},pendingLinkTimer:null,pendingLink:null,
+    busy:false,draft:'',ctx:{},pendingLinkTimer:null,pendingLink:null,
     Host:{callStatic(){}},Date,JSON,String,clearTimeout,
     stopSpeech(){},bubbleCall(name,data){if(name==='input')labels.push(data.title);},
     setWork(){},petPlay(){},sayText(text){labels.push(text);},
