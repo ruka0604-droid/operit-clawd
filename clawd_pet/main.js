@@ -929,6 +929,19 @@ function sayText(text, opts) {
 }
 
 // ==================== 对话 ====================
+// Double-tap chooses a single target before opening input. Never fall back
+// to an earlier binding when the current chat cannot be determined.
+let inputChatTarget = null;
+let inputRequestId = 0;
+async function bindCurrentChatForInput() {
+  const result = await Tools.Chat.listChats({ limit: 50, sort_by: 'updatedAt', sort_order: 'desc' });
+  const chatId = String(result && result.currentChatId || '').trim();
+  if (!chatId) throw new Error('无法识别 Operit 当前对话，请在设置中手动绑定');
+  const match = ((result && result.chats) || []).find(function (c) { return c.id === chatId; });
+  // Titles are presentation-only; never guess a recipient from list ordering.
+  const title = String(match && match.title || '当前对话').trim().slice(0, 44);
+  return { chatId: chatId, title: title };
+}
 async function ensureChatId() {
   const c = settings.chat;
   if (c.chatId) {
@@ -952,7 +965,7 @@ async function ensureChatId() {
   return id;
 }
 
-async function sendToChat(text) {
+async function sendToChat(text, selectedChatId) {
   if (busy) { sayText('等我说完这句…'); return { ok: false, error: 'busy' }; }
   busy = true;
   stopSpeech();
@@ -964,7 +977,7 @@ async function sendToChat(text) {
     // Do not rely on a previously opened chat window remaining bound.
     const connection = await Tools.Chat.startService({ keep_if_exists: true });
     if (!connection || connection.isConnected !== true) throw new Error('Operit 聊天服务未连接');
-    const chatId = await ensureChatId();
+    const chatId = selectedChatId || await ensureChatId();
     const c = settings.chat;
     const res = await Tools.Chat.sendMessage(
       text, chatId, c.roleCardId || undefined, c.senderName || undefined,
@@ -1239,10 +1252,27 @@ async function buildArchive() {
 // ==================== 交互 ====================
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
-function openInput() {
+async function openInput() {
+  const requestId = ++inputRequestId;
+  inputChatTarget = null;
   stopSpeech();
-  bubbleCall('input', { title: busy ? 'Clawd 还在想上一句…' : '跟毛绒阿衡说点什么', draft: draft });
-  try { Host.callStatic('setInputMode', ctx, true); } catch (e) { hostError = 'setInputMode: ' + e; }
+  if (busy) { sayText('上一条消息还在处理，请稍后再试'); return; }
+  try {
+    const selected = await bindCurrentChatForInput();
+    if (requestId !== inputRequestId) return;
+    inputChatTarget = selected.chatId;
+    // Keep settings consistent with the current selection; failure to save
+    // must not change the locked destination of this input session.
+    settings.chat.chatId = selected.chatId;
+    await saveSettingsBestEffort();
+    if (requestId !== inputRequestId) return;
+    bubbleCall('input', { title: '正在与：' + selected.title, draft: draft });
+    try { Host.callStatic('setInputMode', ctx, true); } catch (e) { hostError = 'setInputMode: ' + e; }
+  } catch (e) {
+    if (requestId !== inputRequestId) return;
+    inputChatTarget = null;
+    sayText('未打开输入框：' + String(e && e.message || e).slice(0, 65));
+  }
 }
 
 function onPoke(n) {
@@ -1278,7 +1308,11 @@ function onTick() {
     try { Host.callStatic('setInputMode', ctx, false); } catch (e) { }
     draft = '';
     const text = ev.submits.join('\n');
-    sendToChat(text);
+    const target = inputChatTarget;
+    inputChatTarget = null;
+    ++inputRequestId;
+    if (target) sendToChat(text, target);
+    else sayText('无法确定发送对话，请重新双击毛绒阿衡');
   }
   if (ev.doubleTap) openInput();
   if (ev.poke) { bump('poke', ev.poke); onPoke(ev.poke); }
@@ -1289,6 +1323,8 @@ function onTick() {
     if (speech.current) nextSegment();
   }
   if (ev.inputClosed && !busy && !(ev.submits && ev.submits.length)) {
+    inputChatTarget = null;
+    ++inputRequestId;
     try { Host.callStatic('hideBubble', ctx); } catch (e) { }
   }
   watchdog();
