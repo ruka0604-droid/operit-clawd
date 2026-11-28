@@ -56,6 +56,7 @@ for name in sorted(paths):
             subprocess.run(["node", "--check"], input=script, text=True, check=True)
 subprocess.run(["node", str(root / "tools/test_plush_preview.js")], check=True)
 subprocess.run(["node", str(root / "tools/test_plush_chat.js")], check=True)
+subprocess.run(["node", str(root / "tools/test_plush_current_chat.js")], check=True)
 out = root / "dist" / ("plush_heng_v" + version + ".toolpkg")
 out.parent.mkdir(exist_ok=True)
 with ZipFile(out, "w", ZIP_DEFLATED) as z:
